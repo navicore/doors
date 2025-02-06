@@ -7,6 +7,8 @@ pub const PLAYER_MOVE_SPEED: f32 = 500.0; // Horizontal movement speed
 pub const PLAYER_JUMP_FORCE: f32 = 25000.0; // Jump force applied when pressing space
 pub const PLAYER_GRAVITY_SCALE: f32 = 25.0; // Gravity multiplier for falling speed
 
+static PLAYER_COLOR: Color = Color::srgb(0.3, 0.6, 1.0); // light blue
+
 #[derive(Bundle)]
 pub struct PlayerBundle {
     pub rigid_body: RigidBody,
@@ -35,7 +37,7 @@ impl PlayerBundle {
                 combine_rule: CoefficientCombine::Average,
             },
             sprite: Sprite {
-                color: Color::srgb(0.3, 0.6, 1.0),
+                color: PLAYER_COLOR,
                 custom_size: Some(Vec2::new(40.0, 40.0)),
                 ..default()
             },

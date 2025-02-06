@@ -4,6 +4,7 @@ use bevy_embedded_assets::{EmbeddedAssetPlugin, PluginMode};
 use camera::CameraPlugin;
 use door::DoorPlugin;
 use integration::TestModeIntegrationPlugin;
+use pause::PausePlugin;
 use player::PlayerPlugin;
 use room::RoomPlugin;
 use scheduler::SchedulePlugin;
@@ -13,6 +14,7 @@ mod camera;
 mod door;
 mod floorplan;
 mod integration;
+mod pause;
 mod player;
 mod room;
 mod scheduler;
@@ -31,6 +33,7 @@ fn main() {
             PlayerPlugin,
             DoorPlugin,
             StatePlugin,
+            PausePlugin,
             TestModeIntegrationPlugin,
         ))
         .run();

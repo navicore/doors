@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::scheduler::InGameSet;
+use crate::{scheduler::InGameSet, state::GameState};
 
 use super::door_systems::spawn_platforms;
 
@@ -9,6 +9,11 @@ pub struct DoorPlugin;
 
 impl Plugin for DoorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, spawn_platforms.in_set(InGameSet::EntityUpdates));
+        app.add_systems(
+            Update,
+            spawn_platforms
+                .run_if(in_state(GameState::InGame))
+                .in_set(InGameSet::EntityUpdates),
+        );
     }
 }

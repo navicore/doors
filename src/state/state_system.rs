@@ -1,73 +1,74 @@
-use bevy::{prelude::*, text::TextBounds};
+use bevy::prelude::*;
 
-use super::state_component::{GameState, PausedText};
+use crate::room::{room_component::WINDOW_WIDTH, WINDOW_HEIGHT};
 
-pub fn remove_pause_text(mut commands: Commands, query: Query<Entity, With<PausedText>>) {
-    for entity in query.iter() {
-        commands.entity(entity).despawn();
-    }
+use super::{
+    state_component::{FadeEffect, FadeOverlay},
+    GameState,
+};
+
+pub fn setup_fade_overlay(mut commands: Commands) {
+    commands.spawn((
+        SpriteBundle {
+            sprite: Sprite {
+                color: Color::rgba(0.0, 0.0, 0.0, 0.0), // Fully transparent initially
+                custom_size: Some(Vec2::new(WINDOW_WIDTH, WINDOW_HEIGHT)), // Cover screen
+                ..default()
+            },
+            transform: Transform::from_xyz(0.0, 0.0, 10.0), // Render on top
+            ..default()
+        },
+        FadeOverlay, // Add this tag so our query finds it
+    ));
+
+    commands.insert_resource(FadeEffect {
+        alpha: 0.0,
+        fading_out: false,
+    });
 }
 
-pub fn game_state_input_events(
+pub fn fade_out(
     mut next_state: ResMut<NextState<GameState>>,
-    state: Res<State<GameState>>,
-    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut fade: ResMut<FadeEffect>,
+    mut fade_query: Query<&mut Sprite, With<FadeOverlay>>,
+    time: Res<Time>,
 ) {
-    if keyboard_input.just_pressed(KeyCode::Escape) {
-        match state.get() {
-            GameState::InGame => next_state.set(GameState::Paused),
-            GameState::Paused => next_state.set(GameState::InGame),
+    let mut sprite = fade_query.single_mut();
+
+    if fade.fading_out {
+        fade.alpha += time.delta_secs() * 1.5; // Slow fade-out
+        fade.alpha = fade.alpha.min(1.0); // Clamp at full opacity
+        sprite.color.set_alpha(fade.alpha);
+
+        println!("Fading Out: Alpha = {}", fade.alpha);
+
+        if fade.alpha >= 1.0 {
+            println!("Finished Fading Out, starting Fade In...");
+            fade.fading_out = false; // Switch to fading in
+                                     //next_state.set(GameState::RoomChange);
+            next_state.set(GameState::TransitioningIn);
         }
-    } else if keyboard_input.just_pressed(KeyCode::KeyQ) {
-        // exit the game
-        std::process::exit(0);
     }
 }
 
-pub fn pause_game(mut time: ResMut<Time<Virtual>>, state: Res<State<GameState>>) {
-    if *state == GameState::Paused {
-        time.set_relative_speed(0.0); // Freeze physics and animation
-    } else {
-        time.set_relative_speed(1.0); // Resume physics
-    }
-}
-
-pub fn display_paused_text(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    camera_query: Query<&Transform, With<Camera2d>>,
+pub fn fade_in(
+    mut next_state: ResMut<NextState<GameState>>,
+    mut fade: ResMut<FadeEffect>,
+    mut fade_query: Query<&mut Sprite, With<FadeOverlay>>,
+    time: Res<Time>,
 ) {
-    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
-    let box_size = Vec2::new(200.0, 50.0);
+    let mut sprite = fade_query.single_mut();
 
-    let camera_position = camera_query
-        .get_single()
-        .map_or(Vec2::ZERO, |camera_transform| {
-            camera_transform.translation.truncate()
-        });
+    if !fade.fading_out {
+        fade.alpha -= time.delta_secs() * 1.5; // Slow fade-in
+        fade.alpha = fade.alpha.max(0.0); // Clamp at full transparency
+        sprite.color.set_alpha(fade.alpha);
 
-    let box_position = camera_position + Vec2::new(0.0, 150.0); // Centered relative to camera
+        println!("Fading In: Alpha = {}", fade.alpha);
 
-    let slightly_smaller_text_font = TextFont {
-        font,
-        font_size: 35.0,
-        ..default()
-    };
-
-    commands
-        .spawn((
-            Sprite::from_color(Color::srgb(0.25, 0.25, 0.75), box_size),
-            Transform::from_translation(box_position.extend(0.0)),
-            PausedText,
-        ))
-        .with_children(|builder| {
-            builder.spawn((
-                Text2d::new("Paused !    "),
-                slightly_smaller_text_font.clone(),
-                TextLayout::new(JustifyText::Center, LineBreak::WordBoundary), // Ensure center justification
-                TextBounds::from(box_size),
-                Transform::from_translation(Vec3::new(0.0, 0.0, 1.0)), // Ensure text is centered in the parent
-                PausedText,
-            ));
-        });
+        if fade.alpha <= 0.0 {
+            println!("Finished Fading In, ready for next transition.");
+            next_state.set(GameState::InGame); // Transition complete
+        }
+    }
 }

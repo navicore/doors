@@ -16,7 +16,7 @@ impl Plugin for RoomPlugin {
             .insert_resource(RoomState::default())
             .add_plugins(DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
-                    title: "Kubernetes Platformer".to_string(),
+                    title: "Doors".to_string(),
                     resolution: bevy::window::WindowResolution::from((WINDOW_WIDTH, WINDOW_HEIGHT)),
                     ..default()
                 }),

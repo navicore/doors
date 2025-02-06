@@ -7,6 +7,8 @@ use crate::door::Platform;
 use crate::player::player_component::Grounded;
 use crate::room::room_component::{CurrentFloorPlan, RoomState};
 use crate::room::{Floor, WINDOW_HEIGHT};
+use crate::state::state_component::FadeEffect;
+use crate::state::GameState;
 use avian2d::prelude::*;
 use bevy::prelude::*;
 use leafwing_input_manager::{
@@ -68,11 +70,17 @@ pub fn player_movement(
 }
 
 pub fn detect_player_at_door(
+    mut next_state: ResMut<NextState<GameState>>,
+    state: Res<State<GameState>>,
     player_query: Query<&Transform, With<Player>>,
     door_query: Query<(&Transform, &Door)>,
     action_state_query: Query<&ActionState<Action>>,
     mut current_floorplan: ResMut<CurrentFloorPlan>,
+    mut fade: ResMut<FadeEffect>,
 ) {
+    if *state != GameState::InGame {
+        return;
+    }
     if let Ok(player_transform) = player_query.get_single() {
         for (door_transform, door) in door_query.iter() {
             let distance = player_transform
@@ -83,6 +91,8 @@ pub fn detect_player_at_door(
                     if action_state.pressed(&Action::Enter) {
                         current_floorplan.you_were_here = current_floorplan.you_are_here.clone();
                         current_floorplan.you_are_here = Some(door.room_id.clone());
+                        next_state.set(GameState::TransitioningOut);
+                        fade.fading_out = true;
                     }
                 }
             }

@@ -15,12 +15,7 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(PostStartup, spawn_player)
-            .add_systems(
-                Update,
-                detect_player_at_door
-                    .in_set(InGameSet::UserInput)
-                    .run_if(in_state(GameState::InGame)),
-            )
+            .add_systems(Update, detect_player_at_door.in_set(InGameSet::UserInput))
             .add_systems(
                 Update,
                 (
